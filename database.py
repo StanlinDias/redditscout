@@ -71,10 +71,21 @@ def init_db() -> None:
             snapshot_at TEXT DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS saved_lists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            kind TEXT NOT NULL,  -- 'subreddits' or 'keywords'
+            content TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(name, kind)
+        );
+
         CREATE INDEX IF NOT EXISTS idx_posts_subreddit ON posts(subreddit);
         CREATE INDEX IF NOT EXISTS idx_posts_source ON posts(source);
         CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_utc);
         CREATE INDEX IF NOT EXISTS idx_ai_scores_composite ON ai_scores(composite_score);
+        CREATE INDEX IF NOT EXISTS idx_saved_lists_kind ON saved_lists(kind);
     """)
     conn.commit()
     conn.close()

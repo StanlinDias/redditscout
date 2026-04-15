@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 import praw
+import prawcore
 
 
 def discover_subreddits(
@@ -13,6 +14,9 @@ def discover_subreddits(
 
     Returns a list of dicts ranked by subscriber count, with an activity
     estimate (posts per day based on the 25 most recent posts).
+
+    Subreddits that are private, quarantined, banned, or otherwise inaccessible
+    are silently skipped so one bad result doesn't break the whole search.
     """
     results = []
     seen: set[str] = set()
@@ -23,18 +27,31 @@ def discover_subreddits(
             continue
         seen.add(sub.display_name.lower())
 
-        activity = _estimate_activity(sub)
-        active = getattr(sub, "accounts_active", None) or getattr(sub, "active_user_count", 0) or 0
-        results.append({
-            "name": sub.display_name,
-            "title": sub.title,
-            "subscribers": sub.subscribers or 0,
-            "active_users": active,
-            "posts_per_day": activity,
-            "description": (sub.public_description or "")[:120],
-            "url": f"https://reddit.com/r/{sub.display_name}",
-            "nsfw": sub.over18,
-        })
+        try:
+            activity = _estimate_activity(sub)
+            active = (
+                getattr(sub, "accounts_active", None)
+                or getattr(sub, "active_user_count", 0)
+                or 0
+            )
+            results.append({
+                "name": sub.display_name,
+                "title": sub.title,
+                "subscribers": sub.subscribers or 0,
+                "active_users": active,
+                "posts_per_day": activity,
+                "description": (sub.public_description or "")[:120],
+                "url": f"https://reddit.com/r/{sub.display_name}",
+                "nsfw": sub.over18,
+            })
+        except (prawcore.exceptions.Forbidden,
+                prawcore.exceptions.NotFound,
+                prawcore.exceptions.Redirect):
+            # Private / quarantined / banned / deleted — skip this sub
+            continue
+        except prawcore.exceptions.PrawcoreException:
+            # Any other Reddit API issue on this single sub — skip
+            continue
 
     results.sort(key=lambda r: (r["subscribers"], r["posts_per_day"]), reverse=True)
     return results
