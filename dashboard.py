@@ -16,7 +16,7 @@ from trending import find_trending
 from karma import get_karma_breakdown
 from database import (
     save_posts, save_discovered_subreddits, save_karma_snapshot,
-    save_ai_score, get_scored_posts,
+    save_ai_score, get_scored_posts, get_karma_history, get_stats,
 )
 from exporter import (
     export_scan_results, export_discovery_results,
@@ -24,6 +24,10 @@ from exporter import (
 )
 from lists import (
     get_lists, get_list, save_list, delete_list, rename_list,
+)
+from bookmarks import (
+    add_bookmark, is_bookmarked, get_bookmarks, count_bookmarks,
+    update_status, remove_bookmark,
 )
 
 st.set_page_config(
@@ -123,6 +127,34 @@ def list_input(
     )
 
 
+def _extract_post_id(r: dict) -> str:
+    """Get a usable post ID from any result dict."""
+    if r.get("id"):
+        return r["id"]
+    url = r.get("url", "")
+    if "/comments/" in url:
+        return url.split("/comments/")[1].split("/")[0]
+    return url
+
+
+def _bookmark_button(post: dict, source: str, idx: int) -> None:
+    """Render a small Save-to-queue / In-queue indicator below a post card."""
+    post_id = _extract_post_id(post)
+    if not post_id:
+        return
+    bm_key = f"bm_{source}_{idx}"
+    if is_bookmarked(post_id):
+        st.markdown(
+            '<div style="font-size:0.8rem; color:var(--text-3); margin: -0.3rem 0 0.6rem 0;">In your queue</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        if st.button("Save to queue", key=bm_key):
+            add_bookmark({**post, "id": post_id}, source=source)
+            st.toast("Saved to queue")
+            st.rerun()
+
+
 def _render_scored_post(p: dict) -> None:
     """Render one freshly scored post as an expander with score bars."""
     s = p.get("ai_scores", {})
@@ -169,14 +201,89 @@ with st.sidebar:
 
     page = st.radio(
         "Navigate",
-        ["Discover", "Scan", "Opportunities", "Trending", "AI Scoring", "Karma", "Lists"],
+        ["Home", "Discover", "Scan", "Opportunities", "Trending", "AI Scoring", "Queue", "Karma", "Lists"],
         label_visibility="collapsed",
         key="nav",
     )
 
 
+# ===== Home =====
+if page == "Home":
+    ui.hero(
+        eyebrow="RedditScout",
+        title="Dashboard",
+        subtitle="Your Reddit growth at a glance.",
+    )
+
+    # --- Stat cards ---
+    stats = get_stats()
+    bm_counts = count_bookmarks()
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.metric("In queue", bm_counts.get("saved", 0))
+    with c2:
+        st.metric("Commented", bm_counts.get("commented", 0))
+    with c3:
+        st.metric("Posts scored", stats["posts_scored"])
+    with c4:
+        st.metric("Saved lists", stats["saved_lists"])
+
+    # --- Queue preview ---
+    ui.section_title("Queue — next up")
+    queue = get_bookmarks(status="saved", limit=5)
+    if queue:
+        for bm in queue:
+            ui.post_card(
+                subreddit=bm["subreddit"],
+                title=bm["title"],
+                url=bm["url"],
+                score=bm["score"],
+                comments=bm["num_comments"],
+                extra_pills=[ui.pill(bm.get("source", ""), "muted")] if bm.get("source") else [],
+            )
+    else:
+        ui.empty_state(
+            "Queue is empty",
+            "Scan for posts, then hit 'Save to queue' on ones you want to act on.",
+        )
+
+    # --- Top scored ---
+    ui.section_title("Top AI-scored posts")
+    top_scored = get_scored_posts(min_score=5, limit=5)
+    if top_scored:
+        for p in top_scored:
+            composite = p.get("composite_score", 0)
+            ui.post_card(
+                subreddit=p["subreddit"],
+                title=p["title"],
+                url=p.get("url") or p.get("permalink") or f"https://reddit.com/r/{p['subreddit']}",
+                extra_pills=[
+                    ui.pill(f"{composite:.1f}/10", "muted"),
+                    ui.pill(p.get("category", ""), "muted"),
+                ],
+            )
+    else:
+        ui.empty_state("No scored posts yet", "Use the AI Scoring tab to analyze posts.")
+
+    # --- Karma trend ---
+    karma_history = get_karma_history(limit=30)
+    if karma_history:
+        ui.section_title("Karma trend")
+        import pandas as pd
+        df = pd.DataFrame(karma_history)
+        df = df.rename(columns={
+            "snapshot_at": "Date",
+            "total_karma": "Total",
+            "comment_karma": "Comments",
+            "post_karma": "Posts",
+        })
+        df = df.set_index("Date")
+        st.area_chart(df[["Total"]], color=["#FF4500"])
+
+
 # ===== Discover Subreddits =====
-if page == "Discover":
+elif page == "Discover":
     ui.hero(
         eyebrow="Discover",
         title="Find the right subreddits",
@@ -287,7 +394,7 @@ elif page == "Scan":
             )
             ui.section_title(f"{len(results)} matching post{'s' if len(results) != 1 else ''}")
 
-            for r in results:
+            for i, r in enumerate(results):
                 ui.post_card(
                     subreddit=r["subreddit"],
                     title=r["title"],
@@ -297,6 +404,7 @@ elif page == "Scan":
                     comments=r["comments"],
                     extra_pills=[ui.pill(f'match: {r["matched_keyword"]}', "pattern")],
                 )
+                _bookmark_button(r, "scan", i)
 
             path = export_scan_results(results)
             st.caption(f"Exported to `{path}`")
@@ -361,7 +469,7 @@ elif page == "Opportunities":
 
             if fresh:
                 ui.section_title(f"New subreddits · {len(fresh)}")
-                for r in fresh:
+                for i, r in enumerate(fresh):
                     ui.post_card(
                         subreddit=r["subreddit"],
                         title=r["title"],
@@ -371,10 +479,11 @@ elif page == "Opportunities":
                         comments=r["comments"],
                         pattern=r["matched_pattern"],
                     )
+                    _bookmark_button(r, "opp_fresh", i)
 
             if engaged:
                 ui.section_title(f"Already engaged · {len(engaged)}")
-                for r in engaged:
+                for i, r in enumerate(engaged):
                     ui.post_card(
                         subreddit=r["subreddit"],
                         title=r["title"],
@@ -385,6 +494,7 @@ elif page == "Opportunities":
                         pattern=r["matched_pattern"],
                         extra_pills=[ui.pill("engaged", "muted")],
                     )
+                    _bookmark_button(r, "opp_engaged", i)
 
             path = export_opportunities(results)
             st.caption(f"Exported to `{path}`")
@@ -447,7 +557,7 @@ elif page == "Trending":
         if results:
             ui.section_title(f"{len(results)} trending post{'s' if len(results) != 1 else ''} · ranked by visibility")
 
-            for r in results:
+            for i, r in enumerate(results):
                 velocity_pill = ui.pill(f"↑ {r['velocity']}/hr", "velocity")
                 ratio_pill = ui.pill(f"{int(r['upvote_ratio']*100)}% upvoted", "ratio")
                 ui.post_card(
@@ -459,6 +569,7 @@ elif page == "Trending":
                     comments=r["comments"],
                     extra_pills=[velocity_pill, ratio_pill],
                 )
+                _bookmark_button(r, "trend", i)
         else:
             ui.empty_state(
                 "No trending posts match",
@@ -593,6 +704,77 @@ elif page == "AI Scoring":
             )
         else:
             ui.empty_state("No scored posts yet", "Run a scan above to get started.")
+
+
+# ===== Queue =====
+elif page == "Queue":
+    ui.hero(
+        eyebrow="Queue",
+        title="Post queue",
+        subtitle="Posts you've saved to act on. Comment, then mark as done.",
+    )
+
+    bm_counts = count_bookmarks()
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Saved", bm_counts.get("saved", 0))
+    with c2:
+        st.metric("Commented", bm_counts.get("commented", 0))
+    with c3:
+        st.metric("Skipped", bm_counts.get("skipped", 0))
+
+    # --- Filter ---
+    status_filter = st.radio(
+        "Show",
+        ["All", "Saved", "Commented", "Skipped"],
+        horizontal=True,
+        key="queue_filter",
+    )
+    filter_map = {"All": None, "Saved": "saved", "Commented": "commented", "Skipped": "skipped"}
+    items = get_bookmarks(status=filter_map[status_filter], limit=200)
+
+    if not items:
+        ui.empty_state(
+            "Nothing here yet" if status_filter == "All" else f"No {status_filter.lower()} posts",
+            "Save posts from the Scan, Opportunities, or Trending tabs.",
+        )
+    else:
+        for bm in items:
+            ui.post_card(
+                subreddit=bm["subreddit"],
+                title=bm["title"],
+                url=bm["url"],
+                score=bm["score"],
+                comments=bm["num_comments"],
+                extra_pills=[
+                    ui.pill(bm["status"], "velocity" if bm["status"] == "saved" else "muted"),
+                    ui.pill(bm.get("source", ""), "muted") if bm.get("source") else "",
+                ],
+            )
+
+            # Action buttons
+            btn_cols = st.columns([1, 1, 1, 4])
+            if bm["status"] == "saved":
+                with btn_cols[0]:
+                    if st.button("Commented", key=f"q_done_{bm['post_id']}"):
+                        update_status(bm["post_id"], "commented")
+                        st.toast("Marked as commented")
+                        st.rerun()
+                with btn_cols[1]:
+                    if st.button("Skip", key=f"q_skip_{bm['post_id']}"):
+                        update_status(bm["post_id"], "skipped")
+                        st.toast("Skipped")
+                        st.rerun()
+            elif bm["status"] in ("commented", "skipped"):
+                with btn_cols[0]:
+                    if st.button("Move back", key=f"q_undo_{bm['post_id']}"):
+                        update_status(bm["post_id"], "saved")
+                        st.rerun()
+            with btn_cols[2]:
+                if st.button("Remove", key=f"q_rm_{bm['post_id']}"):
+                    remove_bookmark(bm["post_id"])
+                    st.toast("Removed")
+                    st.rerun()
 
 
 # ===== Karma Tracker =====

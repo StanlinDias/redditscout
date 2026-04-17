@@ -81,6 +81,22 @@ def init_db() -> None:
             UNIQUE(name, kind)
         );
 
+        CREATE TABLE IF NOT EXISTS bookmarks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id TEXT NOT NULL UNIQUE,
+            subreddit TEXT NOT NULL,
+            title TEXT NOT NULL,
+            url TEXT NOT NULL,
+            score INTEGER DEFAULT 0,
+            num_comments INTEGER DEFAULT 0,
+            source TEXT,
+            status TEXT DEFAULT 'saved',
+            notes TEXT DEFAULT '',
+            bookmarked_at TEXT DEFAULT (datetime('now')),
+            acted_at TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_bookmarks_status ON bookmarks(status);
         CREATE INDEX IF NOT EXISTS idx_posts_subreddit ON posts(subreddit);
         CREATE INDEX IF NOT EXISTS idx_posts_source ON posts(source);
         CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_utc);
@@ -246,6 +262,40 @@ def save_karma_snapshot(data: dict) -> None:
         )
     conn.commit()
     conn.close()
+
+
+# --- Stats helpers for Home dashboard ---
+
+def get_karma_history(limit: int = 30) -> list[dict]:
+    """Return total karma per snapshot, ordered oldest → newest."""
+    conn = _get_conn()
+    rows = conn.execute(
+        """SELECT snapshot_at,
+                  SUM(total_karma)   AS total_karma,
+                  SUM(comment_karma) AS comment_karma,
+                  SUM(post_karma)    AS post_karma
+           FROM karma_snapshots
+           GROUP BY snapshot_at
+           ORDER BY snapshot_at DESC
+           LIMIT ?""",
+        (limit,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in reversed(rows)]
+
+
+def get_stats() -> dict:
+    """Quick counts for the Home dashboard."""
+    conn = _get_conn()
+    posts_count = conn.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
+    scored_count = conn.execute("SELECT COUNT(*) FROM ai_scores").fetchone()[0]
+    lists_count = conn.execute("SELECT COUNT(*) FROM saved_lists").fetchone()[0]
+    conn.close()
+    return {
+        "posts_scanned": posts_count,
+        "posts_scored": scored_count,
+        "saved_lists": lists_count,
+    }
 
 
 # Initialize on import
