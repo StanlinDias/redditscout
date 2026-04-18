@@ -14,13 +14,13 @@ import streamlit as st
 
 # --- Design tokens ----------------------------------------------------------
 
-TEXT = "#1D1D1F"
-TEXT_SECONDARY = "#6E6E73"
-TEXT_TERTIARY = "#86868B"
-BORDER = "#E5E5E7"
-BORDER_STRONG = "#D2D2D7"
+TEXT = "#2D3142"
+TEXT_SECONDARY = "#6B7280"
+TEXT_TERTIARY = "#9CA3AF"
+BORDER = "#E8ECF1"
+BORDER_STRONG = "#D1D5DB"
 SURFACE = "#FFFFFF"
-SURFACE_ALT = "#F5F5F7"
+SURFACE_ALT = "#F3F4F8"
 ACCENT = "#FF4500"
 ACCENT_HOVER = "#E63E00"
 ACCENT_TINT = "#FFF0EA"
@@ -62,10 +62,10 @@ _GLOBAL_CSS = f"""
     font-feature-settings: "ss01", "cv11";
   }}
 
-  /* Force light mode regardless of OS/Streamlit theme */
+  /* Force light mode — soft warm-gray canvas */
   .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"],
   .main, section.main {{
-    background: var(--surface) !important;
+    background: var(--surface-alt) !important;
     color: var(--text) !important;
   }}
   .stApp p, .stApp span, .stApp div, .stApp label,
@@ -80,17 +80,18 @@ _GLOBAL_CSS = f"""
   [data-testid="stDeployButton"] {{ display: none; }}
   [data-testid="stToolbar"] {{ right: 1rem; }}
 
-  /* Main container — generous Apple-style spacing */
+  /* Main container — generous spacing */
   .block-container {{
     max-width: 1040px;
-    padding-top: 2.5rem !important;
+    padding-top: 2rem !important;
     padding-bottom: 4rem !important;
   }}
 
-  /* Sidebar restyle — Apple macOS-app feel */
+  /* Sidebar — soft, clean */
   [data-testid="stSidebar"] {{
-    background: var(--surface-alt);
-    border-right: 1px solid var(--border);
+    background: var(--surface);
+    border-right: none;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.04);
   }}
   [data-testid="stSidebar"] .block-container {{
     padding-top: 1.75rem !important;
@@ -131,9 +132,10 @@ _GLOBAL_CSS = f"""
     letter-spacing: -0.01em;
     margin: 0 !important;
   }}
-  /* Active nav item — use :has() for checked radio */
+  /* Active nav item — soft accent tint bg */
   [data-testid="stSidebar"] [role="radiogroup"] > label:has(input:checked) {{
-    background: rgba(0,0,0,0.06);
+    background: var(--accent-tint);
+    box-shadow: 0 1px 4px rgba(255,69,0,0.08);
   }}
   [data-testid="stSidebar"] [role="radiogroup"] > label:has(input:checked) p {{
     color: var(--accent) !important;
@@ -150,46 +152,48 @@ _GLOBAL_CSS = f"""
   h2 {{ font-size: 1.5rem; }}
   h3 {{ font-size: 1.15rem; }}
 
-  /* Buttons — Apple-pill primary with Reddit orange */
+  /* Buttons — soft, rounded */
   .stButton > button {{
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 500;
     font-family: var(--font);
     letter-spacing: -0.01em;
-    padding: 0.5rem 1.1rem;
-    border: 1px solid var(--border);
+    padding: 0.55rem 1.2rem;
+    border: none;
     background: var(--surface);
     color: var(--text);
-    transition: all 0.15s ease;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }}
   .stButton > button:hover {{
-    border-color: var(--border-strong);
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   }}
   .stButton > button[kind="primary"] {{
-    background: var(--accent);
-    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+    border: none;
     color: white;
+    box-shadow: 0 2px 10px rgba(255,69,0,0.25);
   }}
   .stButton > button[kind="primary"]:hover {{
-    background: var(--accent-hover);
-    border-color: var(--accent-hover);
+    box-shadow: 0 4px 16px rgba(255,69,0,0.35);
+    transform: translateY(-1px);
   }}
 
-  /* Inputs */
+  /* Inputs — soft, borderless */
   .stTextInput input, .stNumberInput input, .stTextArea textarea {{
-    border-radius: 10px !important;
-    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    border: 1px solid transparent !important;
+    background: var(--surface) !important;
     font-family: var(--font) !important;
     font-size: 0.95rem !important;
-    padding: 0.6rem 0.8rem !important;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    padding: 0.65rem 0.9rem !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+    transition: box-shadow 0.2s, border-color 0.2s;
   }}
   .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {{
     border-color: var(--accent) !important;
-    box-shadow: 0 0 0 3px var(--accent-tint) !important;
+    box-shadow: 0 2px 10px rgba(255,69,0,0.12) !important;
   }}
   .stTextInput label, .stNumberInput label, .stTextArea label {{
     color: var(--text) !important;
@@ -220,54 +224,69 @@ _GLOBAL_CSS = f"""
     border-bottom: 2px solid var(--accent) !important;
   }}
 
-  /* Alerts — softer Apple-style */
+  /* Alerts — soft */
   .stAlert {{
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--surface-alt);
+    border-radius: 14px;
+    border: none;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
   }}
 
-  /* Dataframe — cleaner borders */
+  /* Dataframe — soft card */
   [data-testid="stDataFrame"] {{
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    border: none;
+    border-radius: 16px;
     overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   }}
 
-  /* Metric cards */
+  /* Metric cards — soft gradient tints */
   [data-testid="stMetric"] {{
     background: var(--surface);
-    padding: 1.1rem 1.3rem;
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    transition: box-shadow 0.15s, transform 0.15s;
+    padding: 1.2rem 1.4rem;
+    border-radius: 18px;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s, transform 0.2s;
   }}
   [data-testid="stMetric"]:hover {{
-    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
-    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
   }}
   [data-testid="stMetricLabel"] {{
     color: var(--text-3) !important;
-    font-size: 0.78rem !important;
+    font-size: 0.75rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.03em !important;
+    letter-spacing: 0.05em !important;
     text-transform: uppercase;
   }}
   [data-testid="stMetricValue"] {{
-    font-weight: 700 !important;
-    font-size: 1.75rem !important;
+    font-weight: 800 !important;
+    font-size: 2rem !important;
     letter-spacing: -0.03em !important;
     font-variant-numeric: tabular-nums;
     color: var(--text) !important;
   }}
+  /* Gradient tint on metric cards — 1st, 2nd, 3rd, 4th */
+  [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) [data-testid="stMetric"] {{
+    background: linear-gradient(135deg, #FFF5F0 0%, #FFE0D1 100%);
+  }}
+  [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) [data-testid="stMetric"] {{
+    background: linear-gradient(135deg, #EEFBF0 0%, #D1F5D9 100%);
+  }}
+  [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(3) [data-testid="stMetric"] {{
+    background: linear-gradient(135deg, #EEF3FF 0%, #D5E0FF 100%);
+  }}
+  [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4) [data-testid="stMetric"] {{
+    background: linear-gradient(135deg, #F5EEFF 0%, #E3D5FF 100%);
+  }}
 
   /* Expanders */
   [data-testid="stExpander"] {{
-    border: 1px solid var(--border) !important;
-    border-radius: 12px !important;
+    border: none !important;
+    border-radius: 16px !important;
     background: var(--surface);
     margin-bottom: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }}
   [data-testid="stExpander"] summary {{
     padding: 0.9rem 1.1rem !important;
@@ -277,9 +296,9 @@ _GLOBAL_CSS = f"""
   /* --- Custom components --- */
 
   .rs-hero {{
-    padding: 0.5rem 0 1.75rem 0;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 2rem;
+    padding: 0.75rem 0 1.75rem 0;
+    border-bottom: none;
+    margin-bottom: 1.5rem;
   }}
   .rs-hero-eyebrow {{
     color: var(--accent);
@@ -394,17 +413,16 @@ _GLOBAL_CSS = f"""
 
   .rs-card {{
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 1.15rem 1.3rem;
-    margin-bottom: 0.65rem;
-    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    border: none;
+    border-radius: 16px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 0.7rem;
+    transition: box-shadow 0.2s, transform 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }}
   .rs-card:hover {{
-    border-color: var(--border-strong);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
   }}
   .rs-card-meta {{
     display: flex;
@@ -491,21 +509,21 @@ _GLOBAL_CSS = f"""
   }}
 
   .rs-section-title {{
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 700;
     color: var(--text-3);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    margin: 1.75rem 0 0.75rem 0;
+    margin: 2rem 0 0.85rem 0;
   }}
 
   .rs-empty {{
-    border: 1px dashed var(--border-strong);
-    border-radius: 12px;
-    padding: 2rem 1.5rem;
+    border: 2px dashed var(--border);
+    border-radius: 18px;
+    padding: 2.5rem 1.5rem;
     text-align: center;
     color: var(--text-2);
-    background: var(--surface-alt);
+    background: var(--surface);
   }}
   .rs-empty-title {{
     font-weight: 500;
@@ -515,13 +533,12 @@ _GLOBAL_CSS = f"""
 
   /* Onboarding */
   .rs-welcome {{
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: 16px;
+    border: none;
+    border-radius: 20px;
     padding: 2rem 2.25rem;
-    background: linear-gradient(135deg, var(--surface) 0%, var(--accent-tint) 100%);
+    background: linear-gradient(135deg, var(--surface) 0%, #FFF3ED 50%, #FFE8DC 100%);
     margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
   }}
   .rs-welcome-title {{
     font-size: 1.5rem;
@@ -576,15 +593,16 @@ _GLOBAL_CSS = f"""
     line-height: 1.4;
   }}
   .rs-tip {{
-    background: var(--surface-alt);
-    border: 1px solid var(--border);
+    background: var(--surface);
+    border: none;
     border-left: 3px solid var(--accent);
-    border-radius: 10px;
-    padding: 0.8rem 1.1rem;
+    border-radius: 12px;
+    padding: 0.85rem 1.2rem;
     margin-bottom: 1.25rem;
     font-size: 0.88rem;
     color: var(--text-2);
     line-height: 1.55;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
   }}
   .rs-tip strong {{ color: var(--text); }}
 
@@ -592,10 +610,11 @@ _GLOBAL_CSS = f"""
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.35rem 0.7rem;
+    padding: 0.4rem 0.75rem;
     border-radius: 999px;
     background: var(--surface-alt);
-    border: 1px solid var(--border);
+    border: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     font-size: 0.82rem;
     color: var(--text-2);
   }}
