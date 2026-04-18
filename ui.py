@@ -496,6 +496,69 @@ _GLOBAL_CSS = f"""
     margin-bottom: 0.25rem;
   }}
 
+  /* Onboarding */
+  .rs-welcome {{
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 2.25rem;
+    background: var(--surface);
+    margin-bottom: 1.5rem;
+  }}
+  .rs-welcome-title {{
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }}
+  .rs-welcome-sub {{
+    color: var(--text-2);
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }}
+  .rs-step {{
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.65rem 0;
+  }}
+  .rs-step-num {{
+    width: 28px; height: 28px; min-width: 28px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 0.82rem;
+    color: var(--text-2);
+  }}
+  .rs-step-num.done {{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }}
+  .rs-step-label {{
+    font-weight: 500;
+    color: var(--text);
+    font-size: 0.95rem;
+  }}
+  .rs-step-desc {{
+    color: var(--text-2);
+    font-size: 0.85rem;
+    margin-top: 0.1rem;
+  }}
+  .rs-tip {{
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.88rem;
+    color: var(--text-2);
+    line-height: 1.55;
+  }}
+  .rs-tip strong {{ color: var(--text); }}
+
   .rs-connection {{
     display: inline-flex;
     align-items: center;
@@ -659,5 +722,89 @@ def empty_state(title: str, detail: str = "") -> None:
           {detail_html}
         </div>
         """,
+        unsafe_allow_html=True,
+    )
+
+
+# --- Onboarding ---
+
+_WORKFLOW_STEPS = [
+    ("Discover", "discovered", "Find subreddits relevant to your niche or topic"),
+    ("Save a list", "saved_list", "Save your best subreddits or keywords as a reusable list"),
+    ("Scan or find opportunities", "scanned", "Search for posts matching your keywords or pain-point patterns"),
+    ("Save to queue", "queued", "Bookmark interesting posts you want to comment on"),
+    ("Comment and track", "found_opportunities", "Open posts on Reddit, comment, then mark as done in your Queue"),
+    ("Score with AI", "scored", "Run AI analysis to rank posts by pain-point potential"),
+]
+
+
+def welcome_screen() -> None:
+    """Full welcome for first-time users (no data in DB yet)."""
+    steps_html = ""
+    for i, (label, _, desc) in enumerate(_WORKFLOW_STEPS, 1):
+        steps_html += f"""
+        <div class="rs-step">
+          <div class="rs-step-num">{i}</div>
+          <div>
+            <div class="rs-step-label">{html.escape(label)}</div>
+            <div class="rs-step-desc">{html.escape(desc)}</div>
+          </div>
+        </div>
+        """
+
+    st.markdown(
+        f"""
+        <div class="rs-welcome">
+          <div class="rs-welcome-title">Welcome to RedditScout</div>
+          <div class="rs-welcome-sub">
+            Find high-value Reddit posts, save them to a queue, comment to grow your
+            presence, and track your progress — all from one dashboard.
+          </div>
+          {steps_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.info("Start by going to **Discover** in the sidebar and searching for a topic related to your niche.")
+
+
+def progress_tracker(progress: dict) -> None:
+    """Show workflow steps with completion status."""
+    steps_html = ""
+    for i, (label, key, desc) in enumerate(_WORKFLOW_STEPS, 1):
+        done = progress.get(key, False)
+        num_class = "rs-step-num done" if done else "rs-step-num"
+        marker = "✓" if done else str(i)
+        steps_html += f"""
+        <div class="rs-step">
+          <div class="{num_class}">{marker}</div>
+          <div>
+            <div class="rs-step-label">{html.escape(label)}</div>
+            <div class="rs-step-desc">{html.escape(desc)}</div>
+          </div>
+        </div>
+        """
+
+    completed = progress.get("completed", 0)
+    total = progress.get("total", 6)
+
+    st.markdown(
+        f"""
+        <div class="rs-welcome" style="padding: 1.5rem 1.75rem;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.75rem;">
+            <div style="font-weight:600; font-size:1.05rem; color:var(--text);">Getting started</div>
+            <div style="font-size:0.82rem; color:var(--text-3);">{completed} of {total} done</div>
+          </div>
+          {steps_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def tip(text: str) -> None:
+    """Contextual tip shown at the top of a tab."""
+    st.markdown(
+        f'<div class="rs-tip">{text}</div>',
         unsafe_allow_html=True,
     )

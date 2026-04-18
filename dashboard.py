@@ -17,6 +17,7 @@ from karma import get_karma_breakdown
 from database import (
     save_posts, save_discovered_subreddits, save_karma_snapshot,
     save_ai_score, get_scored_posts, get_karma_history, get_stats,
+    get_onboarding_progress,
 )
 from exporter import (
     export_scan_results, export_discovery_results,
@@ -215,6 +216,14 @@ if page == "Home":
         subtitle="Your Reddit growth at a glance.",
     )
 
+    # --- Onboarding ---
+    progress = get_onboarding_progress()
+    if not progress["any_activity"]:
+        ui.welcome_screen()
+    else:
+        if progress["completed"] < progress["total"]:
+            ui.progress_tracker(progress)
+
     # --- Stat cards ---
     stats = get_stats()
     bm_counts = count_bookmarks()
@@ -290,6 +299,8 @@ elif page == "Discover":
         subtitle="Search Reddit for communities relevant to a topic, ranked by size and activity.",
     )
 
+    ui.tip("<strong>How it works:</strong> Enter a topic and we'll search Reddit for matching communities, ranked by subscribers and daily activity. Save the ones you like as a list to reuse on other tabs.")
+
     col1, col2 = st.columns([3, 1])
     with col1:
         topic = st.text_input(
@@ -348,6 +359,8 @@ elif page == "Scan":
         title="Keyword scanner",
         subtitle="Pull recent posts matching your keywords across a set of subreddits.",
     )
+
+    ui.tip("<strong>How it works:</strong> Enter keywords and subreddits (or load from a saved list), then hit Scan. We pull recent posts and show matches. Save interesting ones to your Queue.")
 
     keywords = list_input(
         label="Keywords",
@@ -419,6 +432,8 @@ elif page == "Opportunities":
         title="Find engagement openings",
         subtitle="Surface posts where people are asking for recommendations, feedback, or tools.",
     )
+
+    ui.tip("<strong>How it works:</strong> We scan subreddits for 30+ pain-point patterns like 'looking for', 'need help with', and 'any recommendations'. Results are filtered to recent, low-comment posts — ideal for a helpful reply that gets noticed.")
 
     subreddits = list_input(
         label="Subreddits",
@@ -510,6 +525,8 @@ elif page == "Trending":
         subtitle="Posts gaining traction right now where commenting puts you in front of the most eyeballs.",
     )
 
+    ui.tip("<strong>How it works:</strong> We pull from Reddit's Rising and Hot feeds, then rank by <strong>upvote velocity</strong> (upvotes per hour) with a penalty for over-commented posts. High velocity + low competition = your comment gets seen by the most people.")
+
     trend_subs = list_input(
         label="Subreddits",
         placeholder="SaaS, startups, indiehackers",
@@ -584,6 +601,8 @@ elif page == "AI Scoring":
         title="Pain-point analysis",
         subtitle="Score posts on relevance, pain clarity, emotional intensity, implementability, and technical depth.",
     )
+
+    ui.tip("<strong>How it works:</strong> We fetch posts matching your criteria, then score each with AI across 5 dimensions: relevance, pain clarity, emotional intensity, implementability, and technical depth. High composite scores = strong product opportunities.")
 
     if not os.getenv("GEMINI_API_KEY"):
         st.warning("Add `GEMINI_API_KEY` to your `.env` file to use AI scoring.")
@@ -714,6 +733,8 @@ elif page == "Queue":
         subtitle="Posts you've saved to act on. Comment, then mark as done.",
     )
 
+    ui.tip("<strong>How it works:</strong> Posts you save from Scan, Opportunities, or Trending land here. Open a post on Reddit, leave your comment, then come back and hit <strong>Commented</strong> to track your progress. Use <strong>Skip</strong> for ones you decide to pass on.")
+
     bm_counts = count_bookmarks()
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -785,6 +806,8 @@ elif page == "Karma":
         subtitle="Your recent karma broken down by subreddit.",
     )
 
+    ui.tip("<strong>How it works:</strong> Fetches your recent posts and comments, then breaks down karma earned per subreddit. Use this to see which communities are giving you the most traction.")
+
     k_limit = st.number_input(
         "Recent items to analyze",
         min_value=50, max_value=1000, value=200,
@@ -843,6 +866,8 @@ elif page == "Lists":
         title="Saved lists",
         subtitle="Reusable sets of subreddits and keywords. Load them from any tab that takes a list.",
     )
+
+    ui.tip("<strong>How it works:</strong> Create named lists of subreddits or keywords here, or save them directly from any input using the <strong>Save as…</strong> button. Load them on any tab via the dropdown above each input field.")
 
     def _render_list_kind(kind: str, display: str) -> None:
         ui.section_title(display)

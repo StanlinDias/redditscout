@@ -298,5 +298,23 @@ def get_stats() -> dict:
     }
 
 
+def get_onboarding_progress() -> dict:
+    """Check which onboarding steps the user has completed."""
+    conn = _get_conn()
+    progress = {
+        "discovered": conn.execute("SELECT COUNT(*) FROM subreddit_discovery").fetchone()[0] > 0,
+        "saved_list": conn.execute("SELECT COUNT(*) FROM saved_lists").fetchone()[0] > 0,
+        "scanned": conn.execute("SELECT COUNT(*) FROM posts WHERE source = 'scan'").fetchone()[0] > 0,
+        "found_opportunities": conn.execute("SELECT COUNT(*) FROM posts WHERE source = 'opportunities'").fetchone()[0] > 0,
+        "queued": conn.execute("SELECT COUNT(*) FROM bookmarks").fetchone()[0] > 0,
+        "scored": conn.execute("SELECT COUNT(*) FROM ai_scores").fetchone()[0] > 0,
+    }
+    conn.close()
+    progress["any_activity"] = any(progress.values())
+    progress["completed"] = sum(1 for v in progress.values() if v and isinstance(v, bool))
+    progress["total"] = 6
+    return progress
+
+
 # Initialize on import
 init_db()
