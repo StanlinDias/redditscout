@@ -537,7 +537,7 @@ elif page == "Trending":
         subtitle="Posts gaining traction right now where commenting puts you in front of the most eyeballs.",
     )
 
-    ui.tip("<strong>How it works:</strong> We pull from Reddit's Rising and Hot feeds, then rank by <strong>upvote velocity</strong> (upvotes per hour) with a penalty for over-commented posts. High velocity + low competition = your comment gets seen by the most people.")
+    ui.tip("<strong>How it works:</strong> We pull from Reddit's New, Rising, Hot, and Top (today) feeds, then rank by <strong>upvote velocity</strong> (upvotes per hour) with a penalty for over-commented posts. High velocity + low competition = your comment gets seen by the most people.")
 
     trend_subs = list_input(
         label="Subreddits",
@@ -550,7 +550,7 @@ elif page == "Trending":
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         t_max_age = st.number_input(
-            "Max age (hours)", min_value=1, max_value=72, value=24, key="trend_age"
+            "Max age (hours)", min_value=1, max_value=168, value=48, key="trend_age"
         )
     with col2:
         t_max_comments = st.number_input(
@@ -559,12 +559,12 @@ elif page == "Trending":
         )
     with col3:
         t_min_score = st.number_input(
-            "Min upvotes", min_value=10, max_value=10000, value=50, key="trend_min_score",
+            "Min upvotes", min_value=1, max_value=10000, value=10, key="trend_min_score",
             help="Filters out low-noise posts",
         )
     with col4:
         t_min_ratio = st.slider(
-            "Min upvote ratio", min_value=0.5, max_value=1.0, value=0.8, step=0.05,
+            "Min upvote ratio", min_value=0.5, max_value=1.0, value=0.65, step=0.05,
             key="trend_min_ratio",
             help="Avoids controversial / divisive posts",
         )

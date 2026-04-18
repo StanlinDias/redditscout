@@ -30,16 +30,16 @@ def _age_str(created_utc: float) -> str:
 def find_trending(
     reddit: praw.Reddit,
     subreddit_names: list[str],
-    max_age_hours: int = 24,
+    max_age_hours: int = 48,
     max_comments: int = 200,
-    min_score: int = 50,
-    min_upvote_ratio: float = 0.7,
+    min_score: int = 10,
+    min_upvote_ratio: float = 0.6,
     limit: int = 100,
 ) -> list[dict]:
     """Find high-visibility posts in the given subreddits, ranked by visibility score.
 
-    Pulls from Reddit's own `.rising()` and `.hot()` listings, dedupes, then
-    re-ranks with our criteria.
+    Pulls from Reddit's `.new()`, `.rising()`, `.hot()`, and `.top("day")`
+    listings, dedupes, then re-ranks with our criteria.
 
     Visibility score = velocity × (1 / (1 + comments/score))
       - velocity = upvotes per hour
@@ -50,10 +50,19 @@ def find_trending(
 
     for sub_name in subreddit_names:
         sub = reddit.subreddit(sub_name)
+        posts: list = []
+        for feed in (sub.new, sub.rising, sub.hot):
+            try:
+                posts.extend(feed(limit=limit))
+            except prawcore.exceptions.PrawcoreException:
+                pass
         try:
-            posts = list(sub.rising(limit=limit)) + list(sub.hot(limit=limit))
-        except prawcore.exceptions.PrawcoreException as exc:
-            print(f"  Warning: could not fetch r/{sub_name}: {exc}")
+            posts.extend(sub.top("day", limit=limit))
+        except prawcore.exceptions.PrawcoreException:
+            pass
+
+        if not posts:
+            print(f"  Warning: could not fetch any posts from r/{sub_name}")
             continue
 
         for post in posts:
