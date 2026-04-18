@@ -236,20 +236,30 @@ _GLOBAL_CSS = f"""
 
   /* Metric cards */
   [data-testid="stMetric"] {{
-    background: var(--surface-alt);
-    padding: 1rem 1.2rem;
-    border-radius: 12px;
+    background: var(--surface);
+    padding: 1.1rem 1.3rem;
+    border-radius: 14px;
     border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    transition: box-shadow 0.15s, transform 0.15s;
+  }}
+  [data-testid="stMetric"]:hover {{
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
   }}
   [data-testid="stMetricLabel"] {{
-    color: var(--text-2) !important;
-    font-size: 0.8rem !important;
-    font-weight: 500 !important;
+    color: var(--text-3) !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.03em !important;
+    text-transform: uppercase;
   }}
   [data-testid="stMetricValue"] {{
-    font-weight: 600 !important;
-    letter-spacing: -0.02em !important;
+    font-weight: 700 !important;
+    font-size: 1.75rem !important;
+    letter-spacing: -0.03em !important;
     font-variant-numeric: tabular-nums;
+    color: var(--text) !important;
   }}
 
   /* Expanders */
@@ -273,18 +283,22 @@ _GLOBAL_CSS = f"""
   }}
   .rs-hero-eyebrow {{
     color: var(--accent);
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    background: var(--accent-tint);
+    border-radius: 6px;
   }}
   .rs-hero-title {{
     font-size: 2.25rem;
     font-weight: 600;
     letter-spacing: -0.03em;
     color: var(--text);
-    margin: 0 0 0.5rem 0;
+    margin: 0.4rem 0 0.5rem 0;
   }}
   .rs-hero-sub {{
     font-size: 1.05rem;
@@ -296,25 +310,26 @@ _GLOBAL_CSS = f"""
   .rs-brand {{
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.5rem 0 1.5rem 0;
+    gap: 0.7rem;
+    padding: 0.5rem 0 1.25rem 0;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
   }}
   .rs-brand-mark {{
-    width: 32px; height: 32px;
-    background: var(--accent);
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent) 0%, #E63E00 100%);
     color: white;
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700;
-    font-size: 1rem;
+    font-weight: 800;
+    font-size: 1.1rem;
     letter-spacing: -0.02em;
+    box-shadow: 0 2px 8px rgba(255,69,0,0.25);
   }}
   .rs-brand-name {{
-    font-weight: 600;
-    font-size: 1.05rem;
-    letter-spacing: -0.01em;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
   }}
 
   .rs-pill {{
@@ -380,14 +395,16 @@ _GLOBAL_CSS = f"""
   .rs-card {{
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.1rem 1.25rem;
+    border-radius: 14px;
+    padding: 1.15rem 1.3rem;
     margin-bottom: 0.65rem;
     transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   }}
   .rs-card:hover {{
     border-color: var(--border-strong);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
   }}
   .rs-card-meta {{
     display: flex;
@@ -499,14 +516,16 @@ _GLOBAL_CSS = f"""
   /* Onboarding */
   .rs-welcome {{
     border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
     border-radius: 16px;
     padding: 2rem 2.25rem;
-    background: var(--surface);
+    background: linear-gradient(135deg, var(--surface) 0%, var(--accent-tint) 100%);
     margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
   }}
   .rs-welcome-title {{
     font-size: 1.5rem;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--text);
     margin-bottom: 0.5rem;
@@ -515,43 +534,53 @@ _GLOBAL_CSS = f"""
     color: var(--text-2);
     font-size: 1rem;
     margin-bottom: 1.5rem;
-    line-height: 1.5;
+    line-height: 1.6;
   }}
   .rs-step {{
     display: flex;
     align-items: flex-start;
     gap: 0.85rem;
-    padding: 0.65rem 0;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
   }}
+  .rs-step:last-child {{ border-bottom: none; }}
   .rs-step-num {{
-    width: 28px; height: 28px; min-width: 28px;
-    background: var(--surface-alt);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    width: 30px; height: 30px; min-width: 30px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 600; font-size: 0.82rem;
-    color: var(--text-2);
+    font-weight: 700; font-size: 0.82rem;
+    color: white;
+    box-shadow: 0 2px 6px rgba(255,69,0,0.2);
   }}
   .rs-step-num.done {{
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
+    background: var(--green);
+    box-shadow: 0 2px 6px rgba(52,199,89,0.25);
+  }}
+  .rs-step-num.pending {{
+    background: var(--surface-alt);
+    border: 1.5px solid var(--border);
+    color: var(--text-3);
+    box-shadow: none;
   }}
   .rs-step-label {{
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text);
     font-size: 0.95rem;
   }}
   .rs-step-desc {{
     color: var(--text-2);
     font-size: 0.85rem;
-    margin-top: 0.1rem;
+    margin-top: 0.15rem;
+    line-height: 1.4;
   }}
   .rs-tip {{
     background: var(--surface-alt);
     border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
     border-radius: 10px;
-    padding: 0.75rem 1rem;
+    padding: 0.8rem 1.1rem;
     margin-bottom: 1.25rem;
     font-size: 0.88rem;
     color: var(--text-2);
@@ -773,7 +802,7 @@ def progress_tracker(progress: dict) -> None:
     steps_html = ""
     for i, (label, key, desc) in enumerate(_WORKFLOW_STEPS, 1):
         done = progress.get(key, False)
-        num_class = "rs-step-num done" if done else "rs-step-num"
+        num_class = "rs-step-num done" if done else "rs-step-num pending"
         marker = "✓" if done else str(i)
         steps_html += f"""
         <div class="rs-step">

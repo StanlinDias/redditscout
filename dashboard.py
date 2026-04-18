@@ -202,10 +202,22 @@ with st.sidebar:
 
     page = st.radio(
         "Navigate",
-        ["Home", "Discover", "Scan", "Opportunities", "Trending", "AI Scoring", "Queue", "Karma", "Lists"],
+        [
+            "🏠  Home",
+            "🔍  Discover",
+            "📡  Scan",
+            "💡  Opportunities",
+            "🔥  Trending",
+            "🧠  AI Scoring",
+            "📌  Queue",
+            "📊  Karma",
+            "📋  Lists",
+        ],
         label_visibility="collapsed",
         key="nav",
     )
+    # Strip emoji prefix for page matching
+    page = page.split("  ", 1)[-1] if "  " in page else page
 
 
 # ===== Home =====
